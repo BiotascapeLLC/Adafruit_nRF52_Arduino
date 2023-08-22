@@ -113,13 +113,15 @@ class AdafruitBluefruit
     /* Lower Level Classes (Bluefruit.Advertising.*, etc.)
      *------------------------------------------------------------------*/
     BLEPeriph          Periph;
-    BLECentral         Central;
     BLESecurity        Security;
     BLEGatt            Gatt;
 
     BLEAdvertising     Advertising;
     BLEAdvertisingData ScanResponse;
+  #ifdef BLE_GAP_ROLE_CENTRAL
+    BLECentral         Central;
     BLEScanner         Scanner;
+  #endif
     BLEDiscovery       Discovery;
 
     /*------------------------------------------------------------------*/

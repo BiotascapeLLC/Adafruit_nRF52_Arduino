@@ -279,10 +279,14 @@ bool BLEConnection::removeBondKey(void)
 
 bool BLEConnection::requestPairing(void)
 {
+#ifdef BLE_GAP_ROLE_CENTRAL
   // skip if already paired
   if ( secured() ) return true;
 
   return Bluefruit.Security._authenticate(_conn_hdl);
+#else
+  return secured();
+#endif
 }
 
 bool BLEConnection::waitForIndicateConfirm(void)
