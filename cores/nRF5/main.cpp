@@ -82,6 +82,9 @@ int main( void )
 
 #if CFG_SYSVIEW
   SEGGER_SYSVIEW_Conf();
+#elif CFG_LOGGER == 2
+  memset(&_SEGGER_RTT, 0, sizeof(_SEGGER_RTT));
+  SEGGER_RTT_Init();
 #endif
 
   // Create a task for loop()
