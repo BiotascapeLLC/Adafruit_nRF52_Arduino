@@ -231,7 +231,7 @@ size_t Uart::write(uint8_t data)
 
 size_t Uart::write(const uint8_t *buffer, size_t size)
 {
-  if(size == 0) return 0;
+  if (size == 0 || !_begun) return 0;
 
   size_t sent = 0;
 
