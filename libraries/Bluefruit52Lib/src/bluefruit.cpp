@@ -118,9 +118,11 @@ static void bluefruit_blinky_cb( TimerHandle_t xTimer )
 static void nrf_error_cb(uint32_t id, uint32_t pc, uint32_t info)
 {
 #if CFG_DEBUG
-  PRINT_INT(id);
-  PRINT_HEX(pc);
-  PRINT_HEX(info);
+  LOG_LV1("SD", "SoftDevice assertion FAILED! id=%ld, pc=0x%00X, info=0x%00X", id, pc, info);
+  LOG_LV1("SD", "This is usually caused by a timing issue when the debugger \n"
+                "has halted the app for too long. If you break the CPU \n"
+                "while the SoftDevice is running, you cannot continue; you \n"
+                "must restart the app.");
 
   if ( id == NRF_FAULT_ID_SD_ASSERT && info != 0)
   {
@@ -135,7 +137,7 @@ static void nrf_error_cb(uint32_t id, uint32_t pc, uint32_t info)
     LOG_LV1("SD Err", "assert at %s : %d", assert_info->p_file_name, assert_info->line_num);
   }
 
-  while(1) yield();
+  *(int *)nullptr; // Jump to hardfault handler
 #endif
 }
 
