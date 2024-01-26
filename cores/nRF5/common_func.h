@@ -204,6 +204,7 @@ const char* dbg_err_str(int32_t err_id); // TODO move to other place
 
 #define ADALOG(tag, ...) \
   do { \
+    PRINTF("[%6lu] ", xTaskGetTickCount()); \
     if ( tag ) PRINTF("[%-6s] ", tag);\
     PRINTF(__VA_ARGS__);\
     PRINTF("\r\n");\
