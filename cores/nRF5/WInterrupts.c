@@ -40,6 +40,8 @@
 static voidFuncPtr callbacksInt[NUMBER_OF_GPIO_TE];
 static bool callbackDeferred[NUMBER_OF_GPIO_TE];
 static int8_t channelMap[NUMBER_OF_GPIO_TE];
+static callbackPtr portCallback;
+static void *portCallbackUsr;
 static int enabled = 0;
 
 /* Configure I/O interrupt sources */
@@ -177,6 +179,41 @@ void detachInterrupt(uint32_t pin)
   }
 }
 
+/*
+ * \brief Specifies a named Interrupt Service Routine (ISR) to call when a PORT event occurs.
+ *        Replaces any previous function that was attached to the interrupt.
+ *  
+ * PORT events are a power-efficient alternative to GPIOTE rising/falling edge
+ * interrupts. Any GPIO port with SENSE enabled will trigger the PORT event.
+ */
+void attachPortInterrupt(callbackPtr cb, void *cbUsr)
+{
+  if (!enabled) {
+    __initialize();
+    enabled = 1;
+  }
+
+  // Disable PORT interrupt
+  NRF_GPIOTE->INTENCLR = GPIOTE_INTENCLR_PORT_Clear << GPIOTE_INTENCLR_PORT_Pos;
+
+  // Clear pending PORT events
+  NRF_GPIOTE->EVENTS_PORT = 0;
+
+  // Configure PORT event to latch mode.
+  // This adds complexity and is more annoying but it could potentially make GPIO
+  // events more reliable, especially if the radio is busy and the interrupt signal
+  // comes and goes during that time frame.
+  // NRF_P0->DETECTMODE = GPIO_DETECTMODE_DETECTMODE_LDETECT << GPIO_DETECTMODE_DETECTMODE_Pos;
+  // NRF_P0->LATCH = ~0;
+  // NRF_P1->LATCH = ~0;
+
+  portCallback = cb;
+  portCallbackUsr = cbUsr;
+
+  // Enable PORT interrupt
+  NRF_GPIOTE->INTENSET |= GPIOTE_INTENSET_PORT_Enabled << GPIOTE_INTENSET_PORT_Pos;
+}
+
 void GPIOTE_IRQHandler()
 {
 #if CFG_SYSVIEW
@@ -208,6 +245,17 @@ void GPIOTE_IRQHandler()
     // clear the event
     NRF_GPIOTE->EVENTS_IN[ch] = 0;
   }
+
+  if (NRF_GPIOTE->EVENTS_PORT) {
+    // Not going to use the Adafruit event loop. Because how do you know when the
+    // callback has finished? Well, you have to add a callback to the callback...
+    // It's callbacks all the way down!
+    if (portCallback) {
+      portCallback(portCallbackUsr);
+    }
+    NRF_GPIOTE->EVENTS_PORT = 0;
+  }
+
 #if __CORTEX_M == 0x04
   // See note at nRF52840_PS_v1.1.pdf section 6.1.8 ("interrupt clearing")
   // See also https://gcc.gnu.org/onlinedocs/gcc/Volatiles.html for why
