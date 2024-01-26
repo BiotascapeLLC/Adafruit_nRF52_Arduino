@@ -97,14 +97,28 @@
 #define configEXPECTED_IDLE_TIME_BEFORE_SLEEP                    2
 
 /* Tickless idle/low power functionality. */
+#if CFG_SYSVIEW
+#define _PRE_SLEEP_TRACE_START do { SEGGER_SYSVIEW_MarkStart((unsigned int) vPortSuppressTicksAndSleep); } while (0)
+#define _PRE_SLEEP_TRACE_STOP do { SEGGER_SYSVIEW_MarkStop((unsigned int) vPortSuppressTicksAndSleep); } while (0)
+#else
+#define _PRE_SLEEP_TRACE_START
+#define _PRE_SLEEP_TRACE_STOP
+#endif
+
 #define configPRE_SLEEP_PROCESSING( xModifiableIdleTime ) \
     { \
+        _PRE_SLEEP_TRACE_START; \
         /* Errata 89: https://infocenter.nordicsemi.com/topic/errata_nRF52832_Rev2/ERR/nRF52832/Rev2/latest/anomaly_832_89.html */ \
         *(volatile uint32_t *)0x40003FFC = 0; \
         *(volatile uint32_t *)0x40003FFC; \
         *(volatile uint32_t *)0x40003FFC = 1; \
         /* Errata 246: https://infocenter.nordicsemi.com/topic/errata_nRF52833_Rev2/ERR/nRF52833/Rev2/latest/anomaly_833_246.html */ \
         *(volatile uint32_t *)0x4007AC84ul = 0x00000002ul; \
+    } \
+
+#define configPOST_SLEEP_PROCESSING( xExpectedIdleTime ) \
+    { \
+        _PRE_SLEEP_TRACE_STOP; \
     } \
 
 /* Define to trap errors during development. */
